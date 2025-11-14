@@ -6,15 +6,39 @@
 <title>Ultimate School Games</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <style>
-body { font-family:'Roboto',sans-serif; margin:0; padding:0; background:#f0f0f0; color:#000; text-align:center; transition: background 0.5s; }
-.menu, .settings, .game, #adminPanel { display:none; padding:20px; max-width:600px; margin:auto; }
-.visible { display:block; }
-button { padding:10px 20px; margin:5px; border:none; border-radius:12px; cursor:pointer; background:linear-gradient(45deg,#6a11cb,#2575fc); color:white; font-weight:bold; transition:0.3s; }
-button:hover { transform: scale(1.05); box-shadow:0 0 10px #2575fc; }
-input { padding:8px; margin:5px; border-radius:5px; border:1px solid #ccc; width:calc(100% - 20px); }
-#gameArea { width:100%; height:220px; margin:20px 0; position:relative; overflow:hidden; border-radius:12px; transition: background 0.5s; background:#a0e0ff;}
-#player { width:50px; position:absolute; bottom:0px; left:50px; transition: all 0.3s; }
+  body { font-family:'Roboto',sans-serif; margin:0; padding:0; background:#f0f0f0; color:#000; text-align:center; transition: background 0.5s; }
+  .menu, .settings, .game, #adminPanel { display:none; padding:20px; max-width:600px; margin:auto; }
+  .visible { display:block; }
+  button { padding:10px 20px; margin:5px; border:none; border-radius:12px; cursor:pointer; background:linear-gradient(45deg,#6a11cb,#2575fc); color:white; font-weight:bold; transition:0.3s; }
+  button:hover { transform: scale(1.05); box-shadow:0 0 10px #2575fc; }
+  input { padding:8px; margin:5px; border-radius:5px; border:1px solid #ccc; width:calc(100% - 20px); }
+  #gameArea { width:100%; height:220px; margin:20px 0; position:relative; overflow:hidden; border-radius:12px; transition: background 0.5s; background:#a0e0ff;}
+  #player { width:50px; position:absolute; bottom:0px; left:50px; transition: all 0.3s; }
 </style>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.31.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.31.0/firebase-analytics.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.31.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.31.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDBauKzilu4O3hH68Aq0c1F5AykhAg3Db4",
+    authDomain: "ultimate-school-games.firebaseapp.com",
+    projectId: "ultimate-school-games",
+    storageBucket: "ultimate-school-games.firebasestorage.app",
+    messagingSenderId: "870332221562",
+    appId: "1:870332221562:web:da450674b44bbfa18513c3",
+    measurementId: "G-F8MFSLNWVB"
+  };
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  window.firebaseApp = { auth, db }; // für andere Skripte
+</script>
 </head>
 <body>
 
@@ -61,6 +85,10 @@ input { padding:8px; margin:5px; border-radius:5px; border:1px solid #ccc; width
 <div class="settings" id="settingsMenu">
   <h2>⚙ Einstellungen</h2>
   <div>
+    <h4>🎵 Musik Lautstärke</h4>
+    <input type="range" id="musicVolume" min="0" max="1" step="0.01" value="0.5" onchange="setVolume(this.value)">
+  </div>
+  <div>
     <h4>🎭 Skin auswählen</h4>
     <button onclick="changeSkin('schueler')">Schüler</button>
     <button onclick="changeSkin('lehrer')">Lehrer</button>
@@ -74,16 +102,22 @@ input { padding:8px; margin:5px; border-radius:5px; border:1px solid #ccc; width
     <button onclick="changeBG('gaming')">Gaming</button>
   </div>
   <div>
-    <h4>💾 Spielstand</h4>
-    <button onclick="saveGame()">Speichern</button>
-    <button onclick="loadGame()">Laden</button>
-    <button onclick="exportSave()">Export</button>
-    <button onclick="importSave()">Import</button>
-  </div>
-  <div>
-    <h4>🔐 Admin</h4>
+    <h4>🔐 Konto</h4>
+    <button onclick="signInWithGoogle()">Mit Google einloggen</button><br>
+    <input id="emailInput" type="email" placeholder="Email">
+    <input id="passwordInput" type="password" placeholder="Passwort">
+    <button onclick="loginUser()">Login</button>
+    <button onclick="registerUser()">Registrieren</button>
+    <button onclick="logoutUser()">Logout</button>
     <input type="text" id="adminEmail" placeholder="Admin Email"> 
     <button onclick="checkAdmin(document.getElementById('adminEmail').value)">Admin Login</button>
+  </div>
+  <div>
+    <h4>💾 Spielstand</h4>
+    <button onclick="saveGameToCloud()">Spielstand speichern</button>
+    <button onclick="loadGame()">Spielstand laden</button>
+    <button onclick="exportSave()">Export</button>
+    <button onclick="importSave()">Import</button>
   </div>
   <button onclick="backToMenu()">🔙 Menu</button>
 </div>
@@ -106,77 +140,158 @@ input { padding:8px; margin:5px; border-radius:5px; border:1px solid #ccc; width
   <button onclick="backToMenu()">🔙 Menu</button>
 </div>
 
-<script>
-let state = {
-  count:0, multiplier:1, level:1, xp:0,
-  skin:'schueler', bgPack:'school', isAdmin:false
-};
+<!-- MUSIK -->
+<audio id="bgMusic" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay></audio>
 
-/* MENU */
-function startClicker(){ showGame('clickerGame'); updateDisplay(); }
-function startRunner(){ showGame('runnerGame'); updateDisplay(); updateSkinImage(); updateBG(); }
-function startSurprise(){ showGame('surpriseGame'); document.getElementById('guessResult').textContent=''; document.getElementById('guessInput').value=''; }
-function openSettings(){ showGame('settingsMenu'); }
-function backToMenu(){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById('menu').classList.add('visible'); }
-function showGame(id){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById(id).classList.add('visible'); }
+<script type="module">
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.31.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.31.0/firebase-firestore.js";
 
-/* CLICKER */
-function clickerClick(){ state.count+=state.multiplier; updateDisplay(); saveGame(); }
+  const auth = window.firebaseApp.auth;
+  const db = window.firebaseApp.db;
 
-/* RUNNER */
-let isJumping=false;
-function jump(){
-  if(isJumping) return;
-  isJumping=true;
-  const player=document.getElementById('player');
-  let pos=0;
-  let up=setInterval(()=>{ if(pos>=100){ clearInterval(up); down(); } else { pos+=10; player.style.bottom=pos+'px'; } },50);
-  function down(){ let downInt=setInterval(()=>{ if(pos<=0){ clearInterval(downInt); player.style.bottom='0px'; isJumping=false; } else { pos-=10; player.style.bottom=pos+'px'; } },50);}
-}
+  // -------------------------
+  // GLOBAL STATE
+  let state = {
+    count:0,
+    multiplier:1,
+    level:1,
+    xp:0,
+    skin:'schueler',
+    bgPack:'school',
+    loggedInUser:null,
+    isAdmin:false
+  };
 
-/* ÜBERRASCHUNGSSPIEL */
-function checkGuess(){
-  const guess = parseInt(document.getElementById('guessInput').value);
-  const number = Math.floor(Math.random()*10)+1;
-  if(guess===number){ 
-    document.getElementById('guessResult').textContent='🎉 Richtig! Du bekommst 50 Klicks!';
-    state.count+=50; updateDisplay(); saveGame();
-  } else { document.getElementById('guessResult').textContent='❌ Falsch! Die Zahl war '+number; }
-}
+  const skins = {
+    schueler:'https://i.imgur.com/2yaf2wb.jpeg',
+    lehrer:'https://i.imgur.com/N0r9M0V.jpeg',
+    direktor:'https://i.imgur.com/4g0e9nS.jpeg',
+    ninja:'https://i.imgur.com/6R3kz7w.jpeg'
+  };
+  const backgrounds = {
+    school:'#a0e0ff',
+    funny:'#ffccff',
+    gaming:'#d9ffcc'
+  };
 
-/* SETTINGS */
-const skins = {
-  schueler:'https://i.imgur.com/2yaf2wb.jpeg',
-  lehrer:'https://i.imgur.com/N0r9M0V.jpeg',
-  direktor:'https://i.imgur.com/4g0e9nS.jpeg',
-  ninja:'https://i.imgur.com/6R3kz7w.jpeg'
-};
-const backgrounds = { school:'#a0e0ff', funny:'#ffccff', gaming:'#d9ffcc' };
-function changeSkin(s){ state.skin=s; updateSkinImage(); saveGame(); alert('Skin geändert: '+s); }
-function updateSkinImage(){ document.getElementById('player').src=skins[state.skin]; }
-function changeBG(bg){ state.bgPack=bg; updateBG(); saveGame(); alert('Hintergrund geändert'); }
-function updateBG(){ document.getElementById('gameArea').style.background=backgrounds[state.bgPack]; }
+  // -------------------------
+  // MENU
+  function startClicker(){ showGame('clickerGame'); updateDisplay(); }
+  function startRunner(){ showGame('runnerGame'); updateDisplay(); updateSkinImage(); updateBG(); }
+  function startSurprise(){ showGame('surpriseGame'); document.getElementById('guessResult').textContent=''; document.getElementById('guessInput').value=''; }
+  function openSettings(){ showGame('settingsMenu'); }
+  function backToMenu(){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById('menu').classList.add('visible'); }
+  function showGame(id){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById(id).classList.add('visible'); }
 
-/* DISPLAY */
-function updateDisplay(){ document.getElementById('clickCount').textContent=state.count; document.getElementById('runnerLevel').textContent=state.level; document.getElementById('runnerXP').textContent=state.xp; }
+  // -------------------------
+  // CLICKER
+  function clickerClick(){ state.count+=state.multiplier; updateDisplay(); saveGameToCloud(); }
 
-/* ADMIN */
-function checkAdmin(email){
-  if(email==='admin@schule.com'){ state.isAdmin=true; document.getElementById('adminBtn').style.display='inline-block'; alert('👑 Admin erkannt'); }
-  else{ state.isAdmin=false; document.getElementById('adminBtn').style.display='none'; alert('❌ Kein Admin'); }
-}
-function showAdminPanel(){ if(!state.isAdmin){ alert('❌ Kein Admin'); return;} showGame('adminPanel'); }
-function unlockSkin(skin){ changeSkin(skin); alert('Skin freigeschaltet: '+skin); }
-function addClicks(amount){ state.count+=amount; updateDisplay(); saveGame(); alert('✅ '+amount+' Klicks hinzugefügt'); }
-function resetAllGames(){ if(confirm('⚠️ Alle Spielstände zurücksetzen?')){ localStorage.clear(); state={count:0,multiplier:1,level:1,xp:0,skin:'schueler',bgPack:'school',isAdmin:false}; updateDisplay(); updateSkinImage(); updateBG(); alert('✅ Zurückgesetzt'); } }
+  // -------------------------
+  // RUNNER
+  let isJumping=false;
+  function jump(){
+    if(isJumping) return;
+    isJumping=true;
+    const player=document.getElementById('player');
+    let pos=0;
+    let up=setInterval(()=>{ if(pos>=100){ clearInterval(up); down(); } else { pos+=10; player.style.bottom=pos+'px'; } },50);
+    function down(){ let downInt=setInterval(()=>{ if(pos<=0){ clearInterval(downInt); player.style.bottom='0px'; isJumping=false; } else { pos-=10; player.style.bottom=pos+'px'; } },50);}
+  }
 
-/* SPEICHERN LOKAL */
-function saveGame(){ localStorage.setItem('schoolGameSave',JSON.stringify(state)); }
-function loadGame(){ const save=localStorage.getItem('schoolGameSave'); if(save){ state=JSON.parse(save); updateDisplay(); updateSkinImage(); updateBG(); alert('✅ Spielstand geladen'); } }
-function exportSave(){ const blob=new Blob([JSON.stringify(state)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='save.json'; a.click(); }
-function importSave(){ const input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=e=>{ const file=e.target.files[0]; const reader=new FileReader(); reader.onload=e=>{ state=JSON.parse(e.target.result); updateDisplay(); updateSkinImage(); updateBG(); alert('✅ Spielstand geladen'); }; reader.readAsText(file); }; input.click(); }
+  // -------------------------
+  // ÜBERRASCHUNGSSPIEL
+  function checkGuess(){
+    const guess = parseInt(document.getElementById('guessInput').value);
+    const number = Math.floor(Math.random()*10)+1;
+    if(guess===number){ 
+      document.getElementById('guessResult').textContent='🎉 Richtig! Du bekommst 50 Klicks!'; 
+      state.count+=50; updateDisplay(); saveGameToCloud();
+    } else { 
+      document.getElementById('guessResult').textContent='❌ Falsch! Die Zahl war '+number; 
+    }
+  }
 
-updateSkinImage(); updateBG(); updateDisplay();
+  // -------------------------
+  // SETTINGS
+  function setVolume(v){ document.getElementById('bgMusic').volume=v; }
+  function changeSkin(s){ state.skin=s; updateSkinImage(); saveGameToCloud(); alert('Skin geändert: '+s); }
+  function updateSkinImage(){ document.getElementById('player').src=skins[state.skin]; }
+  function changeBG(bg){ state.bgPack=bg; updateBG(); saveGameToCloud(); alert('Hintergrund geändert'); }
+  function updateBG(){ document.getElementById('gameArea').style.background=backgrounds[state.bgPack]; }
+
+  // -------------------------
+  // EXPORT / IMPORT
+  function exportSave(){ const blob=new Blob([JSON.stringify(state)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='save.json'; a.click(); }
+  function importSave(){ const input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=e=>{ const file=e.target.files[0]; const reader=new FileReader(); reader.onload=e=>{ Object.assign(state,JSON.parse(e.target.result)); updateDisplay(); updateSkinImage(); updateBG(); alert('Spielstand geladen!'); }; reader.readAsText(file); }; input.click(); }
+
+  // -------------------------
+  // UPDATE DISPLAY
+  function updateDisplay(){ document.getElementById('clickCount').textContent=state.count; document.getElementById('runnerLevel').textContent=state.level; document.getElementById('runnerXP').textContent=state.xp; }
+
+  // -------------------------
+  // ADMIN
+  function checkAdmin(email){ 
+    if(email==='admin@schule.com'){ 
+      state.isAdmin=true; 
+      document.getElementById('adminBtn').style.display='inline-block'; 
+      alert('👑 Admin erkannt'); 
+    } else { 
+      state.isAdmin=false; 
+      document.getElementById('adminBtn').style.display='none'; 
+      alert('❌ Kein Admin'); 
+    } 
+  }
+  function showAdminPanel(){ if(!state.isAdmin){ alert('❌ Kein Admin'); return;} showGame('adminPanel'); }
+  function unlockSkin(skin){ changeSkin(skin); alert('Skin freigeschaltet: '+skin); }
+  function addClicks(amount){ state.count+=amount; updateDisplay(); saveGameToCloud(); alert('✅ '+amount+' Klicks hinzugefügt'); }
+  function resetAllGames(){ if(confirm('⚠️ Alle Spielstände zurücksetzen?')){ localStorage.clear(); state.count=0; state.level=1; state.xp=0; state.multiplier=1; updateDisplay(); saveGameToCloud(); alert('✅ Zurückgesetzt'); } }
+
+  // -------------------------
+  // FIREBASE LOGIN
+  function signInWithGoogle(){ 
+    const provider=new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+      .then(result=>{ 
+        state.loggedInUser=result.user.uid; 
+        checkAdmin(result.user.email); 
+        loadGame(); 
+        alert('✅ Mit Google eingeloggt: '+result.user.email); 
+      })
+      .catch(e=>alert('❌ Fehler: '+e.message));
+  }
+  function loginUser(){ 
+    const email=document.getElementById('emailInput').value;
+    const pw=document.getElementById('passwordInput').value;
+    signInWithEmailAndPassword(auth,email,pw)
+      .then(uc=>{ state.loggedInUser=uc.user.uid; checkAdmin(email); loadGame(); alert('✅ Eingeloggt'); })
+      .catch(e=>alert('❌ Fehler: '+e.message));
+  }
+  function registerUser(){ 
+    const email=document.getElementById('emailInput').value;
+    const pw=document.getElementById('passwordInput').value;
+    createUserWithEmailAndPassword(auth,email,pw)
+      .then(uc=>{ state.loggedInUser=uc.user.uid; checkAdmin(email); saveGameToCloud(); alert('✅ Registriert & eingeloggt'); })
+      .catch(e=>alert('❌ Registrierung fehlgeschlagen: '+e.message));
+  }
+  function logoutUser(){ 
+    signOut(auth).then(()=>{ state.loggedInUser=null; state.isAdmin=false; document.getElementById('adminBtn').style.display='none'; backToMenu(); alert('🔓 Ausgeloggt'); });
+  }
+
+  // -------------------------
+  // CLOUD SAVE
+  async function saveGameToCloud(){
+    if(!state.loggedInUser) return;
+    await setDoc(doc(db,'saves',state.loggedInUser),state);
+  }
+  async function loadGame(){
+    if(!state.loggedInUser) return;
+    const docRef = doc(db,'saves',state.loggedInUser);
+    const docSnap = await getDoc(docRef);
+    if(docSnap.exists()){ state=docSnap.data(); updateDisplay(); updateSkinImage(); updateBG(); alert('✅ Spielstand geladen'); }
+  }
 </script>
+
 </body>
 </html>
