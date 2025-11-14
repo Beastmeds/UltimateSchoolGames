@@ -6,21 +6,16 @@
 <title>Ultimate School Games</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  body { font-family:'Roboto',sans-serif; margin:0; padding:0; background:#f0f0f0; color:#000; text-align:center; }
+  body { font-family:'Roboto',sans-serif; margin:0; padding:0; background:#f0f0f0; color:#000; text-align:center; transition: background 0.5s; }
   .menu, .settings, .game, #adminPanel { display:none; padding:20px; max-width:600px; margin:auto; }
   .visible { display:block; }
-  button { padding:10px 20px; margin:5px; border:none; border-radius:8px; cursor:pointer; background:linear-gradient(45deg,#6a11cb,#2575fc); color:white; font-weight:bold; transition:0.3s; }
+  button { padding:10px 20px; margin:5px; border:none; border-radius:12px; cursor:pointer; background:linear-gradient(45deg,#6a11cb,#2575fc); color:white; font-weight:bold; transition:0.3s; }
   button:hover { transform: scale(1.05); box-shadow:0 0 10px #2575fc; }
   input { padding:8px; margin:5px; border-radius:5px; border:1px solid #ccc; width:calc(100% - 20px); }
-  #gameArea { width:100%; height:200px; margin:20px 0; position:relative; overflow:hidden; background:#a0e0ff; border-radius:12px; }
-  #player { width:50px; position:absolute; bottom:0px; left:50px; }
+  #gameArea { width:100%; height:200px; margin:20px 0; position:relative; overflow:hidden; border-radius:12px; transition: background 0.5s; }
+  #player { width:50px; position:absolute; bottom:0px; left:50px; transition: all 0.3s; }
   .bg-image { width:100%; height:150px; object-fit:cover; border-radius:10px; margin-bottom:10px; }
 </style>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.31.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.31.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.31.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -46,7 +41,7 @@
   <h2>School Runner</h2>
   <p>Level: <span id="runnerLevel">1</span> | XP: <span id="runnerXP">0</span></p>
   <div id="gameArea">
-    <img src="https://i.imgur.com/2yaf2wb.jpeg" id="player">
+    <img src="" id="player">
   </div>
   <button onclick="jump()">Sprung</button>
   <button onclick="backToMenu()">🔙 Menu</button>
@@ -106,6 +101,9 @@
   <button onclick="backToMenu()">🔙 Menu</button>
 </div>
 
+<!-- MUSIK -->
+<audio id="bgMusic" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay></audio>
+
 <script>
 /* -------------------------
        GLOBAL STATE
@@ -125,7 +123,7 @@ let state = {
       MENU FUNCTIONS
 ------------------------- */
 function startClicker(){ showGame('clickerGame'); updateDisplay(); }
-function startRunner(){ showGame('runnerGame'); updateDisplay(); }
+function startRunner(){ showGame('runnerGame'); updateDisplay(); updateSkinImage(); updateBG(); }
 function openSettings(){ showGame('settingsMenu'); }
 function backToMenu(){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById('menu').classList.add('visible'); }
 function showGame(id){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById(id).classList.add('visible'); }
@@ -151,61 +149,33 @@ function jump(){
 /* -------------------------
       SETTINGS FUNCTIONS
 ------------------------- */
-function setVolume(v){ console.log('Volume',v); }
-function changeSkin(s){ state.skin=s; alert('Skin geändert: '+s); saveGameToCloud(); updateDisplay(); }
-function changeBG(bg){ state.bgPack=bg; alert('Hintergrund geändert'); saveGameToCloud(); }
+function setVolume(v){ document.getElementById('bgMusic').volume=v; }
+const skins = {
+  schueler:'https://i.imgur.com/2yaf2wb.jpeg',
+  lehrer:'https://i.imgur.com/N0r9M0V.jpeg',
+  direktor:'https://i.imgur.com/4g0e9nS.jpeg',
+  ninja:'https://i.imgur.com/6R3kz7w.jpeg'
+};
+const backgrounds = {
+  school:'#a0e0ff',
+  funny:'#ffccff',
+  gaming:'#d9ffcc'
+};
+function changeSkin(s){ state.skin=s; updateSkinImage(); saveGameToCloud(); alert('Skin geändert: '+s); }
+function updateSkinImage(){ document.getElementById('player').src=skins[state.skin]; }
+function changeBG(bg){ state.bgPack=bg; updateBG(); saveGameToCloud(); alert('Hintergrund geändert'); }
+function updateBG(){ document.getElementById('gameArea').style.background=backgrounds[state.bgPack]; }
 
 /* -------------------------
      EXPORT / IMPORT
 ------------------------- */
 function exportSave(){ const blob=new Blob([JSON.stringify(state)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='save.json'; a.click(); }
-function importSave(){ const input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=e=>{ const file=e.target.files[0]; const reader=new FileReader(); reader.onload=e=>{ Object.assign(state, JSON.parse(e.target.result)); updateDisplay(); alert('Spielstand geladen!'); }; reader.readAsText(file); }; input.click(); }
+function importSave(){ const input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=e=>{ const file=e.target.files[0]; const reader=new FileReader(); reader.onload=e=>{ Object.assign(state,JSON.parse(e.target.result)); updateDisplay(); updateSkinImage(); updateBG(); alert('Spielstand geladen!'); }; reader.readAsText(file); }; input.click(); }
 
 /* -------------------------
        UPDATE DISPLAY
 ------------------------- */
 function updateDisplay(){ document.getElementById('clickCount').textContent=state.count; document.getElementById('runnerLevel').textContent=state.level; document.getElementById('runnerXP').textContent=state.xp; }
-
-/* -------------------------
-       FIREBASE SETUP
-------------------------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyDBauKzilu4O3hH68Aq0c1F5AykhAg3Db4",
-  authDomain: "ultimate-school-games.firebaseapp.com",
-  projectId: "ultimate-school-games",
-  storageBucket: "ultimate-school-games.firebasestorage.app",
-  messagingSenderId: "870332221562",
-  appId: "1:870332221562:web:da450674b44bbfa18513c3",
-  measurementId: "G-F8MFSLNWVB"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-/* -------------------------
-       USER AUTH
-------------------------- */
-function registerUser(){
-  const email=document.getElementById('emailInput').value;
-  const password=document.getElementById('passwordInput').value;
-  auth.createUserWithEmailAndPassword(email,password)
-    .then(u=>{ state.loggedInUser=u.user.uid; alert('✅ Registriert!'); saveGameToCloud(); checkAdmin(email); })
-    .catch(e=>alert('❌ '+e.message));
-}
-function loginUser(){
-  const email=document.getElementById('emailInput').value;
-  const password=document.getElementById('passwordInput').value;
-  auth.signInWithEmailAndPassword(email,password)
-    .then(u=>{ state.loggedInUser=u.user.uid; alert('✅ Eingeloggt!'); loadGameFromCloud(); checkAdmin(email); })
-    .catch(e=>alert('❌ '+e.message));
-}
-function logoutUser(){ auth.signOut().then(()=>{ state.loggedInUser=null; state.isAdmin=false; document.getElementById('adminBtn').style.display='none'; alert('🔓 Ausgeloggt'); }); }
-
-/* -------------------------
-       CLOUD SAVE
-------------------------- */
-function saveGameToCloud(){ if(!state.loggedInUser) return; db.collection('users').doc(state.loggedInUser).set(state).then(()=>console.log('✔ Cloud Save')).catch(e=>console.error(e)); }
-function loadGameFromCloud(){ if(!state.loggedInUser) return; db.collection('users').doc(state.loggedInUser).get().then(doc=>{ if(doc.exists){ Object.assign(state,doc.data()); updateDisplay(); alert('✅ Cloud geladen'); } else alert('ℹ Kein Cloud Spielstand'); }).catch(e=>console.error(e)); }
 
 /* -------------------------
        ADMIN FEATURES
@@ -219,7 +189,10 @@ function unlockSkin(skin){ changeSkin(skin); alert('Skin freigeschaltet: '+skin)
 function addClicks(amount){ state.count+=amount; updateDisplay(); saveGameToCloud(); alert('✅ '+amount+' Klicks hinzugefügt'); }
 function resetAllGames(){ if(confirm('⚠️ Alle Spielstände zurücksetzen?')){ localStorage.clear(); state.count=0; state.level=1; state.xp=0; state.multiplier=1; updateDisplay(); saveGameToCloud(); alert('✅ Zurückgesetzt'); } }
 
+/* -------------------------
+       FIREBASE (optional)
+------------------------- */
+// Firebase Setup hier einfügen, wenn gewünscht
 </script>
-
 </body>
 </html>
