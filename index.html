@@ -7,15 +7,33 @@
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <style>
   /* --- Grunddesign --- */
-  body { font-family: 'Roboto', sans-serif; margin:0; padding:0; background:#f0f0f0; }
-  .menu, .settings, .game { display:none; padding:20px; }
+  body { 
+    font-family: 'Roboto', sans-serif; 
+    margin:0; padding:0; 
+    background: linear-gradient(135deg, #6e00ff, #00c3ff); 
+    color: #fff;
+    transition: background 0.5s ease;
+  }
+  .menu, .settings, .game { display:none; padding:20px; max-width:1100px; margin:auto; }
   .visible { display:block; }
-  button { padding:10px 20px; margin:5px; border:none; border-radius:8px; cursor:pointer; background:linear-gradient(45deg,#6a11cb,#2575fc); color:white; font-weight:bold; transition:0.3s; }
-  button:hover { transform: scale(1.05); box-shadow:0 0 10px #2575fc; }
+  button { 
+    padding:10px 20px; 
+    margin:5px; 
+    border:none; 
+    border-radius:12px; 
+    cursor:pointer; 
+    background:linear-gradient(45deg,#6a11cb,#2575fc); 
+    color:white; 
+    font-weight:bold; 
+    transition:0.3s;
+  }
+  button:hover { transform: scale(1.05); box-shadow:0 0 12px #2575fc; }
   input { padding:8px; margin:5px; border-radius:5px; border:1px solid #ccc; }
   h1,h2,h3,h4 { margin:5px 0; }
-  #gameArea { width:100%; max-width:500px; margin:auto; text-align:center; }
+  #gameArea { width:100%; max-width:500px; margin:auto; text-align:center; position:relative; height:320px; overflow:hidden; background:linear-gradient(180deg,#72c2ff,#0056b3); border-radius:12px; }
   .bg-image { width:100%; height:200px; object-fit:cover; border-radius:10px; margin-bottom:10px; }
+  #player { width:50px; position:absolute; bottom:40px; left:60px; transition:0.1s; }
+  .obstacle { position:absolute; width:40px; height:40px; background:#ff4646; border-radius:8px; right:0; bottom:40px; }
 </style>
 
 <!-- Firebase -->
@@ -36,40 +54,40 @@
   };
   
   firebase.initializeApp(firebaseConfig);
-
   const auth = firebase.auth();
   const db = firebase.firestore();
 </script>
 </head>
 <body>
 
+<!-- ---------------- MENU ---------------- -->
 <div class="menu visible" id="menu">
   <h1>Ultimate School Games</h1>
   <button onclick="startClicker()">🏫 Clicker</button>
   <button onclick="startRunner()">🏃 Runner</button>
-  <button onclick="openSettings()">⚙ Settings</button>
+  <button onclick="openSettings()">⚙ Einstellungen</button>
 </div>
 
-<!-- --- Clicker Game --- -->
+<!-- ---------------- CLICKER ---------------- -->
 <div class="game" id="clickerGame">
   <h2>School Clicker</h2>
-  <p>Clicks: <span id="clickCount">0</span></p>
+  <p>Klicks: <span id="clickCount">0</span></p>
   <button onclick="clickerClick()">Klick mich!</button>
   <button onclick="backToMenu()">🔙 Menu</button>
 </div>
 
-<!-- --- Runner Game --- -->
+<!-- ---------------- RUNNER ---------------- -->
 <div class="game" id="runnerGame">
   <h2>School Runner</h2>
   <p>Level: <span id="runnerLevel">1</span> | XP: <span id="runnerXP">0</span></p>
   <div id="gameArea">
-    <img src="assets/images/player.png" id="player" style="width:50px; position:relative; top:0px;">
+    <img src="https://i.imgur.com/2yaf2wb.jpeg" id="player">
   </div>
   <button onclick="jump()">Sprung</button>
   <button onclick="backToMenu()">🔙 Menu</button>
 </div>
 
-<!-- --- Settings --- -->
+<!-- ---------------- SETTINGS ---------------- -->
 <div class="settings" id="settingsMenu">
   <h2>⚙ Einstellungen</h2>
   <div>
@@ -80,12 +98,14 @@
     <h4>🎭 Skin auswählen</h4>
     <button onclick="changeSkin('schueler')">Schüler</button>
     <button onclick="changeSkin('lehrer')">Lehrer</button>
+    <button onclick="changeSkin('direktor')">Direktor</button>
   </div>
   <div>
     <h4>🖼 Hintergrundbild</h4>
-    <button onclick="changeBG('school')">Schule</button>
-    <button onclick="changeBG('meme')">Meme</button>
-    <button onclick="changeBG('gaming')">Gaming</button>
+    <button onclick="changeBG('school')">🏫 Schule</button>
+    <button onclick="changeBG('funny')">😂 Meme</button>
+    <button onclick="changeBG('gaming')">🎮 Gaming</button>
+    <button onclick="uploadCustomImage()">⭐ Eigenes Bild</button>
   </div>
   <div>
     <h4>🔐 Konto</h4>
@@ -130,19 +150,33 @@ function showGame(id){ document.querySelectorAll('.game, .settings').forEach(g=>
 /* -------------------------
        CLICKER FUNCTIONS
 ------------------------- */
-function clickerClick(){ state.count += state.multiplier; document.getElementById('clickCount').textContent = state.count; saveGameToCloud(); }
+function clickerClick(){ 
+  state.count += state.multiplier; 
+  document.getElementById('clickCount').textContent = state.count; 
+  saveGameToCloud(); 
+}
 
 /* -------------------------
        RUNNER FUNCTIONS
 ------------------------- */
 let isJumping = false;
+let runnerInterval=null; 
+let obstacles=[];
 function jump(){
   if(isJumping) return;
   isJumping=true;
   const player = document.getElementById('player');
   let pos = 0;
-  let up = setInterval(()=>{ if(pos>=100){ clearInterval(up); down(); } else { pos+=10; player.style.top = -pos+'px'; }},50);
-  function down(){ let down = setInterval(()=>{ if(pos<=0){ clearInterval(down); player.style.top='0px'; isJumping=false; } else { pos-=10; player.style.top=-pos+'px'; }},50); }
+  let up = setInterval(()=>{
+    if(pos>=100){ clearInterval(up); down(); } 
+    else { pos+=10; player.style.bottom = 40+pos+'px'; }
+  },50);
+  function down(){ 
+    let downInt = setInterval(()=>{
+      if(pos<=0){ clearInterval(downInt); player.style.bottom='40px'; isJumping=false; } 
+      else { pos-=10; player.style.bottom=40+pos+'px'; }
+    },50);
+  }
 }
 
 /* -------------------------
@@ -150,7 +184,27 @@ function jump(){
 ------------------------- */
 function setVolume(v){ console.log('Volume:',v); }
 function changeSkin(s){ state.skin = s; alert('Skin geändert!'); saveGameToCloud(); }
-function changeBG(bg){ state.bgPack = bg; alert('Hintergrund geändert!'); saveGameToCloud(); }
+function changeBG(bg){
+  state.bgPack = bg;
+  if(bg==='school') document.body.style.background = "linear-gradient(135deg, #6e00ff, #00c3ff)";
+  if(bg==='funny') document.body.style.background = "linear-gradient(135deg, #ff0080, #ffed00)";
+  if(bg==='gaming') document.body.style.background = "linear-gradient(135deg, #00ffdd, #0047ff)";
+  saveGameToCloud();
+}
+
+function uploadCustomImage(){
+  const input=document.createElement('input'); 
+  input.type='file'; input.accept='image/*';
+  input.onchange=(e)=>{
+    const file=e.target.files[0]; 
+    const url=URL.createObjectURL(file); 
+    document.body.style.backgroundImage=`url(${url})`; 
+    document.body.style.backgroundSize='cover';
+    document.body.style.backgroundPosition='center';
+    localStorage.setItem('customBg', url);
+  }
+  input.click();
+}
 
 /* -------------------------
      EXPORT / IMPORT SAVE
@@ -219,7 +273,7 @@ function loadGameFromCloud(){
     }).catch(e=>console.error(e));
 }
 
-// Automatisches speichern alle 30s
+// Auto Cloud Save alle 30s
 setInterval(()=>{ if(state.loggedInUser) saveGameToCloud(); }, 30000);
 </script>
 
