@@ -1,232 +1,389 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate School Games 🌟</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  body { font-family:'Roboto',sans-serif; margin:0; padding:0; background:#f0f0f0; color:#000; text-align:center; transition: background 0.5s; }
-  .menu, .settings, .game, #adminPanel { display:none; padding:20px; max-width:600px; margin:auto; }
-  .visible { display:block; }
-  button { padding:10px 20px; margin:5px; border:none; border-radius:12px; cursor:pointer; background:linear-gradient(45deg,#6a11cb,#2575fc); color:white; font-weight:bold; transition:0.3s; }
-  button:hover { transform: scale(1.05); box-shadow:0 0 10px #2575fc; }
-  input { padding:8px; margin:5px; border-radius:5px; border:1px solid #ccc; width:calc(100% - 20px); }
-  #gameArea { width:100%; height:200px; margin:20px 0; position:relative; overflow:hidden; border-radius:12px; transition: background 0.5s; }
-  #player { width:50px; position:absolute; bottom:0px; left:50px; transition: all 0.3s; }
-  .bg-image { width:100%; height:150px; object-fit:cover; border-radius:10px; margin-bottom:10px; }
-  h1 { background: linear-gradient(90deg,#6a11cb,#2575fc); -webkit-background-clip:text; color:transparent; }
-  .powerup { position:absolute; width:30px; height:30px; background:gold; border-radius:50%; animation:spin 1s linear infinite; }
-  @keyframes spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ultimate School Games C</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', sans-serif; margin: 0; padding: 0; background: linear-gradient(135deg, #4e00b4, #00d2ff); color: #fff; text-align: center; transition: background 0.5s; }
+    .menu, .settings, .game, #adminPanel { display: none; padding: 20px; max-width: 600px; margin: auto; }
+    .visible { display: block; }
+    button { padding: 12px 24px; margin: 8px; border: none; border-radius: 12px; cursor: pointer; background: linear-gradient(45deg,#6a11cb,#2575fc); color: white; font-weight: bold; transition: transform 0.2s, box-shadow 0.2s; }
+    button:hover { transform: scale(1.05); box-shadow: 0 0 12px #2575fc; }
+    input { padding: 8px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; width: calc(100% - 20px); }
+    #gameArea { width: 100%; height: 220px; margin: 20px 0; position: relative; overflow: hidden; border-radius: 12px; background: #72c2ff; transition: background 0.5s; }
+    #player { width: 60px; position: absolute; bottom: 0px; left: 50px; transition: all 0.3s; }
+    .powerup { position: absolute; width: 30px; height: 30px; background: gold; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    h1 { font-size: 2.2em; margin-bottom: 16px; background: linear-gradient(90deg,#6a11cb,#00d2ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  </style>
+
+  <!-- Firebase & Google Login -->
+  <script src="https://www.gstatic.com/firebasejs/9.31.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.31.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.31.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-<!-- MENU -->
-<div class="menu visible" id="menu">
-  <h1>Ultimate School Games 🌟</h1>
-  <button onclick="startClicker()">🏫 Clicker</button>
-  <button onclick="startRunner()">🏃 Runner</button>
-  <button onclick="openSettings()">⚙ Einstellungen</button>
-  <button id="adminBtn" onclick="showAdminPanel()" style="display:none;">👑 Admin Dashboard</button>
-</div>
+  <!-- MENU -->
+  <div class="menu visible" id="menu">
+    <h1>Ultimate School Games C</h1>
+    <button onclick="startClicker()">🏫 Clicker</button>
+    <button onclick="startRunner()">🏃 Runner</button>
+    <button onclick="openSettings()">⚙ Einstellungen</button>
+    <button id="adminBtn" onclick="showAdminPanel()" style="display:none;">👑 Admin Dashboard</button>
+  </div>
 
-<!-- CLICKER -->
-<div class="game" id="clickerGame">
-  <h2>School Clicker</h2>
-  <p>Klicks: <span id="clickCount">0</span></p>
-  <button onclick="clickerClick()">Klick mich!</button>
-  <button onclick="backToMenu()">🔙 Menu</button>
-</div>
+  <!-- CLICKER -->
+  <div class="game" id="clickerGame">
+    <h2>School Clicker</h2>
+    <p>Klicks: <span id="clickCount">0</span></p>
+    <button onclick="clickerClick()">Klick mich!</button>
+    <button onclick="backToMenu()">🔙 Menu</button>
+  </div>
 
-<!-- RUNNER -->
-<div class="game" id="runnerGame">
-  <h2>School Runner</h2>
-  <p>Level: <span id="runnerLevel">1</span> | XP: <span id="runnerXP">0</span></p>
-  <div id="gameArea">
-    <img src="" id="player">
+  <!-- RUNNER -->
+  <div class="game" id="runnerGame">
+    <h2>School Runner</h2>
+    <p>Level: <span id="runnerLevel">1</span> | XP: <span id="runnerXP">0</span></p>
+    <div id="gameArea">
+      <img src="" id="player">
+    </div>
+    <button onclick="jump()">Sprung</button>
+    <button onclick="backToMenu()">🔙 Menu</button>
   </div>
-  <button onclick="jump()">Sprung</button>
-  <button onclick="backToMenu()">🔙 Menu</button>
-</div>
 
-<!-- SETTINGS -->
-<div class="settings" id="settingsMenu">
-  <h2>⚙ Einstellungen</h2>
-  <div>
-    <h4>🎵 Musik Lautstärke</h4>
-    <input type="range" id="musicVolume" min="0" max="1" step="0.01" value="0.5" onchange="setVolume(this.value)">
+  <!-- SETTINGS -->
+  <div class="settings" id="settingsMenu">
+    <h2>⚙ Einstellungen</h2>
+    <div>
+      <h4>🎵 Musik Lautstärke</h4>
+      <input type="range" id="musicVolume" min="0" max="1" step="0.01" value="0.5" onchange="setVolume(this.value)">
+    </div>
+    <div>
+      <h4>🎭 Skin auswählen</h4>
+      <button onclick="changeSkin('schueler')">Schüler</button>
+      <button onclick="changeSkin('lehrer')">Lehrer</button>
+      <button onclick="changeSkin('direktor')">Direktor</button>
+      <button onclick="changeSkin('ninja')">Ninja</button>
+    </div>
+    <div>
+      <h4>🖼 Hintergrund</h4>
+      <button onclick="changeBG('school')">Schule</button>
+      <button onclick="changeBG('funny')">Meme</button>
+      <button onclick="changeBG('gaming')">Gaming</button>
+    </div>
+    <div>
+      <h4>🔐 Konto</h4>
+      <button onclick="signInWithGoogle()">Mit Google einloggen</button><br>
+      <input id="emailInput" type="email" placeholder="Email">
+      <input id="passwordInput" type="password" placeholder="Passwort">
+      <button onclick="loginUser()">Login</button>
+      <button onclick="registerUser()">Registrieren</button>
+      <button onclick="logoutUser()">Logout</button><br><br>
+      <input type="text" id="adminEmail" placeholder="Admin Email"> 
+      <button onclick="checkAdmin(document.getElementById('adminEmail').value)">Admin Login</button>
+    </div>
+    <div>
+      <h4>💾 Spielstand</h4>
+      <button onclick="saveGameToCloud()">Spielstand speichern</button>
+      <button onclick="loadGame()">Spielstand laden</button>
+      <button onclick="exportSave()">Export</button>
+      <button onclick="importSave()">Import</button>
+    </div>
+    <button onclick="backToMenu()">🔙 Menu</button>
   </div>
-  <div>
-    <h4>🎭 Skin auswählen</h4>
-    <button onclick="changeSkin('schueler')">Schüler</button>
-    <button onclick="changeSkin('lehrer')">Lehrer</button>
-    <button onclick="changeSkin('direktor')">Direktor</button>
-    <button onclick="changeSkin('ninja')">Ninja</button>
-  </div>
-  <div>
-    <h4>🖼 Hintergrund</h4>
-    <button onclick="changeBG('school')">Schule</button>
-    <button onclick="changeBG('funny')">Meme</button>
-    <button onclick="changeBG('gaming')">Gaming</button>
-  </div>
-  <div>
-    <h4>🔐 Konto / Admin</h4>
-    <input id="emailInput" type="email" placeholder="Email">
-    <input id="passwordInput" type="password" placeholder="Passwort">
-    <button onclick="loginUser()">Login</button>
-    <button onclick="registerUser()">Registrieren</button>
-    <button onclick="logoutUser()">Logout</button>
-    <br><br>
-    <input type="text" id="adminEmail" placeholder="Admin Email">
-    <button onclick="checkAdmin(document.getElementById('adminEmail').value)">Admin Login</button>
-  </div>
-  <div>
-    <h4>💾 Spielstand</h4>
-    <button onclick="exportSave()">Export</button>
-    <button onclick="importSave()">Import</button>
-  </div>
-  <button onclick="backToMenu()">🔙 Menu</button>
-</div>
 
-<!-- ADMIN -->
-<div class="settings" id="adminPanel">
-  <h2>👑 Admin Dashboard</h2>
-  <div>
-    <h4>🎭 Skins freischalten</h4>
-    <button onclick="unlockSkin('schueler')">Schüler</button>
-    <button onclick="unlockSkin('lehrer')">Lehrer</button>
-    <button onclick="unlockSkin('direktor')">Direktor</button>
-    <button onclick="unlockSkin('ninja')">Ninja</button>
+  <!-- ADMIN -->
+  <div class="settings" id="adminPanel">
+    <h2>👑 Admin Dashboard</h2>
+    <div>
+      <h4>🎭 Skins freischalten</h4>
+      <button onclick="unlockSkin('schueler')">Schüler</button>
+      <button onclick="unlockSkin('lehrer')">Lehrer</button>
+      <button onclick="unlockSkin('direktor')">Direktor</button>
+      <button onclick="unlockSkin('ninja')">Ninja</button>
+    </div>
+    <div>
+      <h4>💥 Extras</h4>
+      <button onclick="addClicks(1000)">+1000 Klicks</button>
+      <button onclick="resetAllGames()">Spielstände zurücksetzen</button>
+      <button onclick="spawnPowerup()">✨ Power-Up erstellen</button>
+    </div>
+    <button onclick="backToMenu()">🔙 Menu</button>
   </div>
-  <div>
-    <h4>💥 Extras</h4>
-    <button onclick="addClicks(1000)">+1000 Klicks</button>
-    <button onclick="resetAllGames()">Spielstände zurücksetzen</button>
-    <button onclick="spawnPowerup()">✨ Spawn Power-Up</button>
-  </div>
-  <button onclick="backToMenu()">🔙 Menu</button>
-</div>
 
-<!-- MUSIK -->
-<audio id="bgMusic" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay></audio>
+  <!-- Musik -->
+  <audio id="bgMusic" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay></audio>
 
 <script>
-/* -------------------------
-       GLOBAL STATE
-------------------------- */
-let state = {
-  count:0,
-  multiplier:1,
-  level:1,
-  xp:0,
-  skin:'schueler',
-  bgPack:'school',
-  loggedInUser:null,
-  isAdmin:false
-};
+  // --- Firebase Konfiguration (hier deine Werte einsetzen) ---
+  const firebaseConfig = {
+    apiKey: "DEIN_API_KEY",
+    authDomain: "DEIN_PROJEKT.firebaseapp.com",
+    projectId: "DEIN_PROJEKT",
+    storageBucket: "DEIN_PROJEKT.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-/* -------------------------
-      MENU FUNCTIONS
-------------------------- */
-function startClicker(){ showGame('clickerGame'); updateDisplay(); }
-function startRunner(){ showGame('runnerGame'); updateDisplay(); updateSkinImage(); updateBG(); }
-function openSettings(){ showGame('settingsMenu'); }
-function backToMenu(){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById('menu').classList.add('visible'); }
-function showGame(id){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById(id).classList.add('visible'); }
+  // --- Global State ---
+  let state = {
+    count: 0,
+    multiplier: 1,
+    level: 1,
+    xp: 0,
+    skin: 'schueler',
+    bgPack: 'school',
+    loggedInUser: null,
+    isAdmin: false
+  };
 
-/* -------------------------
-      CLICKER FUNCTIONS
-------------------------- */
-function clickerClick(){ state.count+=state.multiplier; updateDisplay(); }
+  // --- Auth mit Google ---
+  function signInWithGoogle(){
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider)
+      .then((result) => {
+        state.loggedInUser = result.user.uid;
+        checkAdmin(result.user.email);
+        loadGameFromCloud();
+        alert('✅ Mit Google eingeloggt: ' + result.user.email);
+      })
+      .catch((error) => {
+        alert('❌ Google Login fehlgeschlagen: ' + error.message);
+      });
+  }
 
-/* -------------------------
-      RUNNER FUNCTIONS
-------------------------- */
-let isJumping=false;
-function jump(){
-  if(isJumping) return;
-  isJumping=true;
-  const player=document.getElementById('player');
-  let pos=0;
-  let up=setInterval(()=>{ if(pos>=100){ clearInterval(up); down(); } else { pos+=10; player.style.bottom=pos+'px'; } },50);
-  function down(){ let downInt=setInterval(()=>{ if(pos<=0){ clearInterval(downInt); player.style.bottom='0px'; isJumping=false; } else { pos-=10; player.style.bottom=pos+'px'; } },50);}
-}
+  // --- Email / Passwort Auth ---
+  function loginUser(){
+    const email = document.getElementById('emailInput').value;
+    const pw = document.getElementById('passwordInput').value;
+    auth.signInWithEmailAndPassword(email, pw)
+      .then(uc => { state.loggedInUser = uc.user.uid; checkAdmin(email); loadGameFromCloud(); alert('✅ Eingeloggt'); })
+      .catch(e => alert('❌ Fehler: ' + e.message));
+  }
+  function registerUser(){
+    const email = document.getElementById('emailInput').value;
+    const pw = document.getElementById('passwordInput').value;
+    auth.createUserWithEmailAndPassword(email, pw)
+      .then(uc => { state.loggedInUser = uc.user.uid; checkAdmin(email); saveGameToCloud(); alert('✅ Registriert & eingeloggt'); })
+      .catch(e => alert('❌ Registrierung fehlgeschlagen: ' + e.message));
+  }
+  function logoutUser(){
+    auth.signOut().then(() => {
+      state.loggedInUser = null;
+      state.isAdmin = false;
+      document.getElementById('adminBtn').style.display = 'none';
+      backToMenu();
+      alert('🔓 Ausgeloggt');
+    });
+  }
 
-/* -------------------------
-      SETTINGS FUNCTIONS
-------------------------- */
-function setVolume(v){ document.getElementById('bgMusic').volume=v; }
+  // --- Beobachte Auth State ---
+  auth.onAuthStateChanged((user) => {
+    if(user){
+      state.loggedInUser = user.uid;
+      checkAdmin(user.email);
+    } else {
+      state.loggedInUser = null;
+      state.isAdmin = false;
+    }
+  });
 
-const skins = {
-  schueler:'https://i.imgur.com/2yaf2wb.jpeg',
-  lehrer:'https://i.imgur.com/N0r9M0V.jpeg',
-  direktor:'https://i.imgur.com/4g0e9nS.jpeg',
-  ninja:'https://i.imgur.com/6R3kz7w.jpeg'
-};
-const backgrounds = {
-  school:'#a0e0ff',
-  funny:'#ffccff',
-  gaming:'#d9ffcc'
-};
+  // --- Speichern & Laden ---
+  function saveGameToCloud(){
+    if(!state.loggedInUser) return;
+    db.collection('saves').doc(state.loggedInUser).set({
+      count: state.count,
+      level: state.level,
+      xp: state.xp,
+      skin: state.skin,
+      bgPack: state.bgPack
+    }).then(() => console.log("Spielstand gespeichert"));
+  }
+  function loadGameFromCloud(){
+    if(!state.loggedInUser) return;
+    db.collection('saves').doc(state.loggedInUser).get().then(doc => {
+      if(doc.exists){
+        const d = doc.data();
+        state.count = d.count;
+        state.level = d.level;
+        state.xp = d.xp;
+        state.skin = d.skin;
+        state.bgPack = d.bgPack;
+        updateDisplay();
+        updateSkinImage();
+        updateBG();
+        alert('✅ Spielstand geladen');
+      } else {
+        alert('ℹ Kein Cloud-Spielstand gefunden');
+      }
+    });
+  }
 
-function changeSkin(s){ state.skin=s; updateSkinImage(); alert('Skin geändert: '+s); }
-function updateSkinImage(){ document.getElementById('player').src=skins[state.skin]; }
-function changeBG(bg){ state.bgPack=bg; updateBG(); alert('Hintergrund geändert'); }
-function updateBG(){ document.getElementById('gameArea').style.background=backgrounds[state.bgPack]; }
+  // --- Game Logic ---
+  function startClicker(){ showGame('clickerGame'); updateDisplay(); }
+  function startRunner(){ showGame('runnerGame'); updateDisplay(); updateSkinImage(); updateBG(); }
+  function openSettings(){ showGame('settingsMenu'); }
+  function backToMenu(){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById('menu').classList.add('visible'); }
+  function showGame(id){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById(id).classList.add('visible'); }
 
-/* -------------------------
-     EXPORT / IMPORT
-------------------------- */
-function exportSave(){ const blob=new Blob([JSON.stringify(state)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='save.json'; a.click(); }
-function importSave(){ const input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=e=>{ const file=e.target.files[0]; const reader=new FileReader(); reader.onload=e=>{ Object.assign(state,JSON.parse(e.target.result)); updateDisplay(); updateSkinImage(); updateBG(); alert('Spielstand geladen!'); }; reader.readAsText(file); }; input.click(); }
+  function clickerClick(){
+    state.count += state.multiplier;
+    updateDisplay();
+  }
 
-/* -------------------------
-       UPDATE DISPLAY
-------------------------- */
-function updateDisplay(){ document.getElementById('clickCount').textContent=state.count; document.getElementById('runnerLevel').textContent=state.level; document.getElementById('runnerXP').textContent=state.xp; }
+  let isJumping=false;
+  function jump(){
+    if(isJumping) return;
+    isJumping=true;
+    const player = document.getElementById('player');
+    let pos = 0;
+    const up = setInterval(() => {
+      if(pos >= 100){ clearInterval(up); down(); }
+      else { pos += 10; player.style.bottom = pos + 'px'; }
+    }, 50);
+    function down(){
+      const downInt = setInterval(() => {
+        if(pos <= 0){ clearInterval(downInt); player.style.bottom = '0px'; isJumping=false; }
+        else { pos -= 10; player.style.bottom = pos + 'px'; }
+      }, 50);
+    }
+  }
 
-/* -------------------------
-       ADMIN FEATURES
-------------------------- */
-function checkAdmin(email){
-  if(email==='admin@example.com'){ state.isAdmin=true; document.getElementById('adminBtn').style.display='inline-block'; alert('👑 Admin erkannt'); }
-  else{ state.isAdmin=false; document.getElementById('adminBtn').style.display='none'; alert('❌ Kein Admin'); }
-}
+  // --- Skins & Hintergrund ---
+  const skins = {
+    schueler: 'https://i.imgur.com/2yaf2wb.jpeg',
+    lehrer: 'https://i.imgur.com/N0r9M0V.jpeg',
+    direktor: 'https://i.imgur.com/4g0e9nS.jpeg',
+    ninja: 'https://i.imgur.com/6R3kz7w.jpeg'
+  };
+  const backgrounds = {
+    school: '#72c2ff',
+    funny: '#ffccff',
+    gaming: '#d9ffcc'
+  };
 
-function showAdminPanel(){ if(!state.isAdmin){ alert('❌ Kein Admin'); return;} showGame('adminPanel'); }
-function unlockSkin(skin){ changeSkin(skin); alert('Skin freigeschaltet: '+skin); }
-function addClicks(amount){ state.count+=amount; updateDisplay(); alert('✅ '+amount+' Klicks hinzugefügt'); }
-function resetAllGames(){ if(confirm('⚠️ Alle Spielstände zurücksetzen?')){ localStorage.clear(); state.count=0; state.level=1; state.xp=0; state.multiplier=1; updateDisplay(); alert('✅ Zurückgesetzt'); } }
+  function changeSkin(s){
+    state.skin = s;
+    updateSkinImage();
+    saveGameToCloud();
+    alert('Skin geändert: ' + s);
+  }
+  function updateSkinImage(){
+    document.getElementById('player').src = skins[state.skin];
+  }
 
-/* -------------------------
-      POWER-UP FUN
-------------------------- */
-function spawnPowerup(){
-  const gameArea=document.getElementById('gameArea');
-  const pu=document.createElement('div');
-  pu.classList.add('powerup');
-  pu.style.left=Math.random()*90+'%';
-  pu.style.top=Math.random()*150+'px';
-  gameArea.appendChild(pu);
-  setTimeout(()=>{ gameArea.removeChild(pu); alert('✨ Power-Up gesammelt! +50 Klicks'); state.count+=50; updateDisplay(); },2000);
-}
+  function changeBG(bg){
+    state.bgPack = bg;
+    updateBG();
+    saveGameToCloud();
+    alert('Hintergrund geändert: ' + bg);
+  }
+  function updateBG(){
+    document.getElementById('gameArea').style.background = backgrounds[state.bgPack];
+  }
 
-/* -------------------------
-      FAKE USER LOGIN (Demo)
-------------------------- */
-function loginUser(){
-  const email=document.getElementById('emailInput').value;
-  const password=document.getElementById('passwordInput').value;
-  if(email && password){ state.loggedInUser=email; alert('✅ Eingeloggt: '+email); checkAdmin(email); } 
-  else alert('❌ Bitte Email und Passwort eingeben'); 
-}
-function registerUser(){ alert('📝 Benutzer registriert! (Demo)'); }
-function logoutUser(){ state.loggedInUser=null; alert('✅ Ausgeloggt'); document.getElementById('adminBtn').style.display='none'; state.isAdmin=false; }
+  // --- Export / Import ---
+  function exportSave(){
+    const blob = new Blob([JSON.stringify(state)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'save.json';
+    a.click();
+  }
+  function importSave(){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = e => {
+        Object.assign(state, JSON.parse(e.target.result));
+        updateDisplay();
+        updateSkinImage();
+        updateBG();
+        alert('✅ Save importiert');
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
 
-updateSkinImage();
-updateBG();
-updateDisplay();
+  // --- Anzeige aktualisieren ---
+  function updateDisplay(){
+    document.getElementById('clickCount').textContent = state.count;
+    document.getElementById('runnerLevel').textContent = state.level;
+    document.getElementById('runnerXP').textContent = state.xp;
+  }
+
+  // --- Admin-Funktionen ---
+  function checkAdmin(email){
+    // Beispiel: Email „admin@schule.com“ hat Adminrechte
+    if(email === 'admin@schule.com'){
+      state.isAdmin = true;
+      document.getElementById('adminBtn').style.display = 'inline-block';
+      alert('👑 Admin erkannt');
+    } else {
+      state.isAdmin = false;
+      document.getElementById('adminBtn').style.display = 'none';
+      alert('❌ Kein Admin');
+    }
+  }
+  function showAdminPanel(){
+    if(!state.isAdmin){
+      alert('❌ Admin-Rechte fehlen');
+      return;
+    }
+    showGame('adminPanel');
+  }
+  function unlockSkin(skin){
+    changeSkin(skin);
+    alert('Skin freigeschaltet: ' + skin);
+  }
+  function addClicks(amount){
+    state.count += amount;
+    updateDisplay();
+    saveGameToCloud();
+    alert('✅ +'+amount+' Klicks');
+  }
+  function resetAllGames(){
+    if(confirm('⚠️ Alle Spielstände löschen?')){
+      state = { count:0, multiplier:1, level:1, xp:0, skin:'schueler', bgPack:'school', loggedInUser: state.loggedInUser, isAdmin: state.isAdmin };
+      saveGameToCloud();
+      updateDisplay();
+      updateSkinImage();
+      updateBG();
+      alert('✅ Zurückgesetzt');
+    }
+  }
+  function spawnPowerup(){
+    const gameArea = document.getElementById('gameArea');
+    const pu = document.createElement('div');
+    pu.classList.add('powerup');
+    pu.style.left = Math.random() * 80 + '%';
+    pu.style.top = Math.random() * 150 + 'px';
+    gameArea.appendChild(pu);
+    setTimeout(() => {
+      gameArea.removeChild(pu);
+      state.count += 50;
+      updateDisplay();
+      saveGameToCloud();
+      alert('✨ Power-Up! +50 Klicks');
+    }, 2000);
+  }
+
+  // --- Initial Setup ---
+  updateSkinImage();
+  updateBG();
+  updateDisplay();
 </script>
+
 </body>
 </html>
