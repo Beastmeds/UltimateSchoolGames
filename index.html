@@ -1,47 +1,30 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Game Hub — Ultimate School Games</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate School Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{--accent:#6e00ff;--accent2:#00c3ff;--glass:rgba(255,255,255,0.08);--glass-2:rgba(0,0,0,0.12);}
-*{box-sizing:border-box;font-family:'Poppins',Arial,sans-serif}
-body{margin:0;min-height:100vh;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center}
-.container{width:100%;max-width:1100px;padding:24px}
-.header{display:flex;align-items:center;gap:20px}
-.logo{width:72px;height:72px;border-radius:14px;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px}
-.h-title{font-size:28px;margin:0}
-.card{background:var(--glass);border-radius:16px;padding:20px;box-shadow:0 8px 30px rgba(0,0,0,0.35);backdrop-filter:blur(6px)}
-.row{display:flex;gap:16px}
-.col{flex:1}
-.center{text-align:center}
-.btn{padding:12px 18px;border-radius:12px;border:none;background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;font-weight:600}
-.btn:hover{transform:translateY(-3px)}
-#gameSelection .option{display:inline-block;margin:10px}
-#startScreen img{width:220px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.45)}
-/* Game UI */
-#gameUI{display:none;flex-direction:column;align-items:center;gap:10px;padding:28px;border-radius:16px}
-#clickBtn{padding:22px 48px;border-radius:18px;border:none;background:linear-gradient(90deg,#ffd54a,#ffb300);color:#000;font-weight:800;font-size:22px}
-.small{font-size:14px;opacity:0.9}
-.controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.settingsPanel{display:none;padding:20px;border-radius:12px;margin-top:10px;background:var(--glass-2)}
-.select{padding:8px;border-radius:10px;border:none}
-/* Runner */
-#runner{display:none;position:relative;overflow:hidden;border-radius:12px;background:linear-gradient(180deg,#72c2ff,#0056b3);height:320px}
-#player{position:absolute;left:60px;bottom:40px;width:60px;height:60px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px}
-.obstacle{position:absolute;width:40px;height:40px;background:#ff4646;border-radius:8px;right:0}
-/* responsive */
-@media(max-width:700px){.header{flex-direction:column;align-items:flex-start}.logo{width:56px;height:56px}.h-title{font-size:20px}.container{padding:12px}}
+  /* --- Grunddesign --- */
+  body { font-family: 'Roboto', sans-serif; margin:0; padding:0; background:#f0f0f0; }
+  .menu, .settings, .game { display:none; padding:20px; }
+  .visible { display:block; }
+  button { padding:10px 20px; margin:5px; border:none; border-radius:8px; cursor:pointer; background:linear-gradient(45deg,#6a11cb,#2575fc); color:white; font-weight:bold; transition:0.3s; }
+  button:hover { transform: scale(1.05); box-shadow:0 0 10px #2575fc; }
+  input { padding:8px; margin:5px; border-radius:5px; border:1px solid #ccc; }
+  h1,h2,h3,h4 { margin:5px 0; }
+  #gameArea { width:100%; max-width:500px; margin:auto; text-align:center; }
+  .bg-image { width:100%; height:200px; object-fit:cover; border-radius:10px; margin-bottom:10px; }
 </style>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.31.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.31.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.31.0/firebase-firestore-compat.js"></script>
+
 <script>
+  // --- Firebase Konfiguration ---
   const firebaseConfig = {
     apiKey: "AIzaSyDBauKzilu4O3hH68Aq0c1F5AykhAg3Db4",
     authDomain: "ultimate-school-games.firebaseapp.com",
@@ -51,97 +34,194 @@ body{margin:0;min-height:100vh;background:linear-gradient(135deg,var(--accent),v
     appId: "1:870332221562:web:da450674b44bbfa18513c3",
     measurementId: "G-F8MFSLNWVB"
   };
+  
   firebase.initializeApp(firebaseConfig);
+
   const auth = firebase.auth();
   const db = firebase.firestore();
 </script>
 </head>
-
 <body>
-<div class="container">
-  <div class="header">
-    <div class="logo">USG</div>
-    <div>
-      <h1 class="h-title">Ultimate School Games — Game Hub</h1>
-      <div class="small">Spiele, passe an, speichere — direkt im Browser oder mit Login</div>
-    </div>
+
+<div class="menu visible" id="menu">
+  <h1>Ultimate School Games</h1>
+  <button onclick="startClicker()">🏫 Clicker</button>
+  <button onclick="startRunner()">🏃 Runner</button>
+  <button onclick="openSettings()">⚙ Settings</button>
+</div>
+
+<!-- --- Clicker Game --- -->
+<div class="game" id="clickerGame">
+  <h2>School Clicker</h2>
+  <p>Clicks: <span id="clickCount">0</span></p>
+  <button onclick="clickerClick()">Klick mich!</button>
+  <button onclick="backToMenu()">🔙 Menu</button>
+</div>
+
+<!-- --- Runner Game --- -->
+<div class="game" id="runnerGame">
+  <h2>School Runner</h2>
+  <p>Level: <span id="runnerLevel">1</span> | XP: <span id="runnerXP">0</span></p>
+  <div id="gameArea">
+    <img src="assets/images/player.png" id="player" style="width:50px; position:relative; top:0px;">
   </div>
+  <button onclick="jump()">Sprung</button>
+  <button onclick="backToMenu()">🔙 Menu</button>
+</div>
 
-  <div class="card" id="mainCard">
-    <!-- Game selection -->
-    <div id="gameSelection" class="center">
-      <h2>🎮 Wähle ein Spiel</h2>
-      <div>
-        <button class="btn option" onclick="openStart('clicker')">🏫 Ultimate School Clicker Deluxe</button>
-        <button class="btn option" onclick="openStart('runner')">🏃 School Runner (Neu)</button>
-      </div>
-    </div>
-
-    <!-- Start screen -->
-    <div id="startScreen" style="display:none;" class="center">
-      <h2 id="startTitle">Spiel</h2>
-      <img id="startImage" src="https://i.imgur.com/4AiXzf8.jpeg" alt="cover" />
-      <div style="margin-top:14px">
-        <button class="btn" onclick="enterSettings()">⚙️ Einstellungen</button>
-        <button class="btn" onclick="beginGame()">▶️ Spiel Starten</button>
-        <button class="btn" onclick="backToMenu()">⬅️ Zurück</button>
-      </div>
-    </div>
-
-    <!-- Settings -->
-    <div id="settingsMenu" class="settingsPanel card" style="display:none;">
-      <h3>⚙️ Einstellungen</h3>
-      <div>
-        <label class="small">🔐 Konto (Firebase Login)</label><br>
-        <input id="emailInput" type="email" placeholder="Email">
-        <input id="passwordInput" type="password" placeholder="Passwort">
-        <button class="btn" onclick="registerUser()">Registrieren</button>
-        <button class="btn" onclick="loginUser()">Login</button>
-        <button class="btn" onclick="logoutUser()">Logout</button>
-      </div>
-      <button class="btn" onclick="backToMenu()">🔙 Menu</button>
-    </div>
+<!-- --- Settings --- -->
+<div class="settings" id="settingsMenu">
+  <h2>⚙ Einstellungen</h2>
+  <div>
+    <h4>🎵 Musik</h4>
+    <input type="range" id="musicVolume" min="0" max="1" step="0.01" value="0.5" onchange="setVolume(this.value)">
   </div>
+  <div>
+    <h4>🎭 Skin auswählen</h4>
+    <button onclick="changeSkin('schueler')">Schüler</button>
+    <button onclick="changeSkin('lehrer')">Lehrer</button>
+  </div>
+  <div>
+    <h4>🖼 Hintergrundbild</h4>
+    <button onclick="changeBG('school')">Schule</button>
+    <button onclick="changeBG('meme')">Meme</button>
+    <button onclick="changeBG('gaming')">Gaming</button>
+  </div>
+  <div>
+    <h4>🔐 Konto</h4>
+    <input id="emailInput" type="email" placeholder="Email">
+    <input id="passwordInput" type="password" placeholder="Passwort">
+    <button onclick="registerUser()">Registrieren</button>
+    <button onclick="loginUser()">Login</button>
+    <button onclick="logoutUser()">Logout</button>
+  </div>
+  <div>
+    <h4>💾 Spielstand</h4>
+    <button onclick="exportSave()">Export</button>
+    <button onclick="importSave()">Import</button>
+  </div>
+  <button onclick="backToMenu()">🔙 Menu</button>
 </div>
 
 <script>
-// --- State
-let state = { count:0, multiplier:1, level:1, xp:0, skin:'schueler', bgPack:'school', loggedInUser:null };
+/* -------------------------
+        GLOBAL STATE
+------------------------- */
+let state = {
+  count: 0,
+  multiplier: 1,
+  level: 1,
+  xp: 0,
+  skin: 'schueler',
+  bgPack: 'school',
+  prestige: 0,
+  loggedInUser: null
+};
 
-// --- Menu / Game Navigation
-let activeGame=null;
-function openStart(game){ activeGame=game; gameSelection.style.display='none'; startScreen.style.display='block'; startTitle.textContent = game==='clicker'?'🏫 Clicker':'🏃 Runner'; }
-function backToMenu(){ startScreen.style.display='none'; settingsMenu.style.display='none'; gameSelection.style.display='block'; }
-function beginGame(){ startScreen.style.display='none'; alert(activeGame+' startet!'); }
+/* -------------------------
+       MENU FUNCTIONS
+------------------------- */
+function startClicker(){ showGame('clickerGame'); }
+function startRunner(){ showGame('runnerGame'); }
+function openSettings(){ showGame('settingsMenu'); }
+function backToMenu(){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById('menu').classList.add('visible'); }
+function showGame(id){ document.querySelectorAll('.game, .settings').forEach(g=>g.classList.remove('visible')); document.getElementById(id).classList.add('visible'); }
 
-// --- Firebase Login
+/* -------------------------
+       CLICKER FUNCTIONS
+------------------------- */
+function clickerClick(){ state.count += state.multiplier; document.getElementById('clickCount').textContent = state.count; saveGameToCloud(); }
+
+/* -------------------------
+       RUNNER FUNCTIONS
+------------------------- */
+let isJumping = false;
+function jump(){
+  if(isJumping) return;
+  isJumping=true;
+  const player = document.getElementById('player');
+  let pos = 0;
+  let up = setInterval(()=>{ if(pos>=100){ clearInterval(up); down(); } else { pos+=10; player.style.top = -pos+'px'; }},50);
+  function down(){ let down = setInterval(()=>{ if(pos<=0){ clearInterval(down); player.style.top='0px'; isJumping=false; } else { pos-=10; player.style.top=-pos+'px'; }},50); }
+}
+
+/* -------------------------
+       SETTINGS FUNCTIONS
+------------------------- */
+function setVolume(v){ console.log('Volume:',v); }
+function changeSkin(s){ state.skin = s; alert('Skin geändert!'); saveGameToCloud(); }
+function changeBG(bg){ state.bgPack = bg; alert('Hintergrund geändert!'); saveGameToCloud(); }
+
+/* -------------------------
+     EXPORT / IMPORT SAVE
+------------------------- */
+function exportSave(){
+  const blob = new Blob([JSON.stringify(state)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='save.json'; a.click();
+}
+function importSave(){
+  const input = document.createElement('input'); input.type='file'; input.accept='.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = e => { Object.assign(state, JSON.parse(e.target.result)); updateDisplay(); alert('Spielstand geladen!'); }
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+/* -------------------------
+       UPDATE DISPLAY
+------------------------- */
+function updateDisplay(){
+  document.getElementById('clickCount').textContent = state.count;
+  document.getElementById('runnerLevel').textContent = state.level;
+  document.getElementById('runnerXP').textContent = state.xp;
+}
+
+/* -------------------------
+       FIREBASE FUNCTIONS
+------------------------- */
+// Registrierung
 function registerUser(){
-  const email=document.getElementById('emailInput').value;
-  const password=document.getElementById('passwordInput').value;
+  const email = document.getElementById('emailInput').value;
+  const password = document.getElementById('passwordInput').value;
   auth.createUserWithEmailAndPassword(email,password)
     .then(uc=>{ alert('✅ Registriert!'); state.loggedInUser=uc.user.uid; saveGameToCloud(); })
     .catch(e=>alert('❌ '+e.message));
 }
+// Login
 function loginUser(){
-  const email=document.getElementById('emailInput').value;
-  const password=document.getElementById('passwordInput').value;
+  const email = document.getElementById('emailInput').value;
+  const password = document.getElementById('passwordInput').value;
   auth.signInWithEmailAndPassword(email,password)
     .then(uc=>{ alert('✅ Eingeloggt!'); state.loggedInUser=uc.user.uid; loadGameFromCloud(); })
     .catch(e=>alert('❌ '+e.message));
 }
+// Logout
 function logoutUser(){ auth.signOut().then(()=>{ state.loggedInUser=null; alert('🔓 Ausgeloggt'); }); }
 
-// --- Cloud Save
+// Cloud Save
 function saveGameToCloud(){
   if(!state.loggedInUser) return;
-  db.collection('users').doc(state.loggedInUser).set(state).then(()=>console.log('✔ Cloud Save'));
+  db.collection('users').doc(state.loggedInUser).set(state)
+    .then(()=>console.log('✔ Cloud Save'))
+    .catch(e=>console.error(e));
 }
+// Cloud Load
 function loadGameFromCloud(){
   if(!state.loggedInUser) return;
-  db.collection('users').doc(state.loggedInUser).get().then(doc=>{
-    if(doc.exists){ Object.assign(state,doc.data()); alert('✅ Cloud Spielstand geladen'); }
-  });
+  db.collection('users').doc(state.loggedInUser).get()
+    .then(doc=>{
+      if(doc.exists){ Object.assign(state, doc.data()); updateDisplay(); alert('✅ Cloud Spielstand geladen'); }
+      else alert('ℹ Kein Cloud-Spielstand gefunden');
+    }).catch(e=>console.error(e));
 }
+
+// Automatisches speichern alle 30s
+setInterval(()=>{ if(state.loggedInUser) saveGameToCloud(); }, 30000);
 </script>
+
 </body>
 </html>
