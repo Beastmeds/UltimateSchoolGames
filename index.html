@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate School Games</title>
+<title>Ultimate School Games 🌟</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <style>
   body { font-family:'Roboto',sans-serif; margin:0; padding:0; background:#f0f0f0; color:#000; text-align:center; transition: background 0.5s; }
@@ -15,13 +15,16 @@
   #gameArea { width:100%; height:200px; margin:20px 0; position:relative; overflow:hidden; border-radius:12px; transition: background 0.5s; }
   #player { width:50px; position:absolute; bottom:0px; left:50px; transition: all 0.3s; }
   .bg-image { width:100%; height:150px; object-fit:cover; border-radius:10px; margin-bottom:10px; }
+  h1 { background: linear-gradient(90deg,#6a11cb,#2575fc); -webkit-background-clip:text; color:transparent; }
+  .powerup { position:absolute; width:30px; height:30px; background:gold; border-radius:50%; animation:spin 1s linear infinite; }
+  @keyframes spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 </style>
 </head>
 <body>
 
 <!-- MENU -->
 <div class="menu visible" id="menu">
-  <h1>Ultimate School Games</h1>
+  <h1>Ultimate School Games 🌟</h1>
   <button onclick="startClicker()">🏫 Clicker</button>
   <button onclick="startRunner()">🏃 Runner</button>
   <button onclick="openSettings()">⚙ Einstellungen</button>
@@ -68,12 +71,15 @@
     <button onclick="changeBG('gaming')">Gaming</button>
   </div>
   <div>
-    <h4>🔐 Konto</h4>
+    <h4>🔐 Konto / Admin</h4>
     <input id="emailInput" type="email" placeholder="Email">
     <input id="passwordInput" type="password" placeholder="Passwort">
-    <button onclick="registerUser()">Registrieren</button>
     <button onclick="loginUser()">Login</button>
+    <button onclick="registerUser()">Registrieren</button>
     <button onclick="logoutUser()">Logout</button>
+    <br><br>
+    <input type="text" id="adminEmail" placeholder="Admin Email">
+    <button onclick="checkAdmin(document.getElementById('adminEmail').value)">Admin Login</button>
   </div>
   <div>
     <h4>💾 Spielstand</h4>
@@ -97,6 +103,7 @@
     <h4>💥 Extras</h4>
     <button onclick="addClicks(1000)">+1000 Klicks</button>
     <button onclick="resetAllGames()">Spielstände zurücksetzen</button>
+    <button onclick="spawnPowerup()">✨ Spawn Power-Up</button>
   </div>
   <button onclick="backToMenu()">🔙 Menu</button>
 </div>
@@ -131,7 +138,7 @@ function showGame(id){ document.querySelectorAll('.game, .settings').forEach(g=>
 /* -------------------------
       CLICKER FUNCTIONS
 ------------------------- */
-function clickerClick(){ state.count+=state.multiplier; updateDisplay(); saveGameToCloud(); }
+function clickerClick(){ state.count+=state.multiplier; updateDisplay(); }
 
 /* -------------------------
       RUNNER FUNCTIONS
@@ -150,6 +157,7 @@ function jump(){
       SETTINGS FUNCTIONS
 ------------------------- */
 function setVolume(v){ document.getElementById('bgMusic').volume=v; }
+
 const skins = {
   schueler:'https://i.imgur.com/2yaf2wb.jpeg',
   lehrer:'https://i.imgur.com/N0r9M0V.jpeg',
@@ -161,9 +169,10 @@ const backgrounds = {
   funny:'#ffccff',
   gaming:'#d9ffcc'
 };
-function changeSkin(s){ state.skin=s; updateSkinImage(); saveGameToCloud(); alert('Skin geändert: '+s); }
+
+function changeSkin(s){ state.skin=s; updateSkinImage(); alert('Skin geändert: '+s); }
 function updateSkinImage(){ document.getElementById('player').src=skins[state.skin]; }
-function changeBG(bg){ state.bgPack=bg; updateBG(); saveGameToCloud(); alert('Hintergrund geändert'); }
+function changeBG(bg){ state.bgPack=bg; updateBG(); alert('Hintergrund geändert'); }
 function updateBG(){ document.getElementById('gameArea').style.background=backgrounds[state.bgPack]; }
 
 /* -------------------------
@@ -182,17 +191,42 @@ function updateDisplay(){ document.getElementById('clickCount').textContent=stat
 ------------------------- */
 function checkAdmin(email){
   if(email==='admin@example.com'){ state.isAdmin=true; document.getElementById('adminBtn').style.display='inline-block'; alert('👑 Admin erkannt'); }
-  else{ state.isAdmin=false; document.getElementById('adminBtn').style.display='none'; }
+  else{ state.isAdmin=false; document.getElementById('adminBtn').style.display='none'; alert('❌ Kein Admin'); }
 }
+
 function showAdminPanel(){ if(!state.isAdmin){ alert('❌ Kein Admin'); return;} showGame('adminPanel'); }
 function unlockSkin(skin){ changeSkin(skin); alert('Skin freigeschaltet: '+skin); }
-function addClicks(amount){ state.count+=amount; updateDisplay(); saveGameToCloud(); alert('✅ '+amount+' Klicks hinzugefügt'); }
-function resetAllGames(){ if(confirm('⚠️ Alle Spielstände zurücksetzen?')){ localStorage.clear(); state.count=0; state.level=1; state.xp=0; state.multiplier=1; updateDisplay(); saveGameToCloud(); alert('✅ Zurückgesetzt'); } }
+function addClicks(amount){ state.count+=amount; updateDisplay(); alert('✅ '+amount+' Klicks hinzugefügt'); }
+function resetAllGames(){ if(confirm('⚠️ Alle Spielstände zurücksetzen?')){ localStorage.clear(); state.count=0; state.level=1; state.xp=0; state.multiplier=1; updateDisplay(); alert('✅ Zurückgesetzt'); } }
 
 /* -------------------------
-       FIREBASE (optional)
+      POWER-UP FUN
 ------------------------- */
-// Firebase Setup hier einfügen, wenn gewünscht
+function spawnPowerup(){
+  const gameArea=document.getElementById('gameArea');
+  const pu=document.createElement('div');
+  pu.classList.add('powerup');
+  pu.style.left=Math.random()*90+'%';
+  pu.style.top=Math.random()*150+'px';
+  gameArea.appendChild(pu);
+  setTimeout(()=>{ gameArea.removeChild(pu); alert('✨ Power-Up gesammelt! +50 Klicks'); state.count+=50; updateDisplay(); },2000);
+}
+
+/* -------------------------
+      FAKE USER LOGIN (Demo)
+------------------------- */
+function loginUser(){
+  const email=document.getElementById('emailInput').value;
+  const password=document.getElementById('passwordInput').value;
+  if(email && password){ state.loggedInUser=email; alert('✅ Eingeloggt: '+email); checkAdmin(email); } 
+  else alert('❌ Bitte Email und Passwort eingeben'); 
+}
+function registerUser(){ alert('📝 Benutzer registriert! (Demo)'); }
+function logoutUser(){ state.loggedInUser=null; alert('✅ Ausgeloggt'); document.getElementById('adminBtn').style.display='none'; state.isAdmin=false; }
+
+updateSkinImage();
+updateBG();
+updateDisplay();
 </script>
 </body>
 </html>
